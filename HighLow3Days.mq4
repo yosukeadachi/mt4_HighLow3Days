@@ -25,6 +25,9 @@ static int     LineNo  = 0;
 
 static int times = 0;
 
+static double gHighs[3] = {0,0,0};
+static double gLows[3] = {0,0,0};
+
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
@@ -71,6 +74,7 @@ int OnCalculate(const int rates_total,
   
   double _highs[3] = {0,0,0};
   double _lows[3] = {0,0,0};
+
   _highs[0] = iHigh(NULL,PERIOD_D1,0);
   _highs[1] = iHigh(NULL,PERIOD_D1,1);
   _highs[2] = iHigh(NULL,PERIOD_D1,2);
@@ -78,12 +82,31 @@ int OnCalculate(const int rates_total,
   _lows[1] = iLow(NULL,PERIOD_D1,1);
   _lows[2] = iLow(NULL,PERIOD_D1,2);
   // Print("OnCalculate _highs[0]:" + _highs[0]);
-  CreateLineObj(_highs[0], LineNo, 1, LineStyle0, LineColorHigh0);
-  CreateLineObj(_lows[0], LineNo, 1, LineStyle0, LineColorLow0);
-  CreateLineObj(_highs[1], LineNo, 1, LineStyle1, LineColorHigh1);
-  CreateLineObj(_lows[1], LineNo, 1, LineStyle1, LineColorLow1);
-  CreateLineObj(_highs[2], LineNo, 1, LineStyle2, LineColorHigh2);
-  CreateLineObj(_lows[2], LineNo, 1, LineStyle2, LineColorLow2);
+  if(gHighs[0] != _highs[0]) {
+    gHighs[0] = _highs[0];
+    Print("OnCalculate update _highs[0]:" + _highs[0]);
+    CreateLineObj(_highs[0], LineNo, 1, LineStyle0, LineColorHigh0);
+  }
+  if(gLows[0] != _lows[0]) {
+    gLows[0] = _lows[0];
+    CreateLineObj(_lows[0], LineNo, 1, LineStyle0, LineColorLow0);
+  }
+  if(gHighs[1] != _highs[1]) {
+    gHighs[1] = _highs[1];
+    CreateLineObj(_highs[1], LineNo, 1, LineStyle1, LineColorHigh1);
+  }
+  if(gLows[1] != _lows[1]) {
+    gLows[1] = _lows[1];
+    CreateLineObj(_lows[1], LineNo, 1, LineStyle1, LineColorLow1);
+  }
+  if(gHighs[2] != _highs[2]) {
+    gHighs[2] = _highs[2];
+    CreateLineObj(_highs[2], LineNo, 1, LineStyle2, LineColorHigh2);
+  }
+  if(gLows[2] != _lows[2]) {
+    gLows[2] = _lows[2];
+    CreateLineObj(_lows[2], LineNo, 1, LineStyle2, LineColorLow2);
+  }
   return(0);
 }
 
