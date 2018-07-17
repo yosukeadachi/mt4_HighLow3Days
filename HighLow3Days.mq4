@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.00"
+#property version   "1.01"
 #property strict
 #property indicator_chart_window
 
@@ -21,8 +21,6 @@ extern color   LineColorHigh2 = Blue;
 extern color   LineColorLow2 = Blue;
 
 static string  Objname = "USDJPY_Line";
-static int     LineNo  = 0;
-
 static int times = 0;
 
 static double gHighs[3] = {0,0,0};
@@ -44,7 +42,7 @@ int deinit(){
    
    string name;
 
-   for(int i = 0; i < LineNo; i++){
+   for(int i = 0; i < ArraySize(gHighs) + ArraySize(gLows); i++){
       name = Objname + i;
       ObjectDelete(name);
    }
@@ -64,10 +62,7 @@ int OnCalculate(const int rates_total,
                 const long& tick_volume[],
                 const long& volume[],
                 const int& spread[])
-{
-  //  if(times > 0) return(0);      //最初だけ実行
-  //  else  times = 1;
-   
+{   
   double Decimal;         //小数点の位置
   if(Point == 0.01) Decimal = 100;
   else Decimal = 10000;
@@ -85,39 +80,60 @@ int OnCalculate(const int rates_total,
   if(gHighs[0] != _highs[0]) {
     gHighs[0] = _highs[0];
     Print("OnCalculate update _highs[0]:" + _highs[0]);
-    CreateLineObj(_highs[0], LineNo, 1, LineStyle0, LineColorHigh0);
+    int _lineNo = 0;
+    string _name = Objname + _lineNo;
+    ObjectDelete(_name);
+    CreateLineObj(_highs[0], _name, 1, LineStyle0, LineColorHigh0);
   }
   if(gLows[0] != _lows[0]) {
     gLows[0] = _lows[0];
-    CreateLineObj(_lows[0], LineNo, 1, LineStyle0, LineColorLow0);
+    Print("OnCalculate update _lows[0]:" + _lows[0]);
+    int _lineNo = 1;
+    string _name = Objname + _lineNo;
+    ObjectDelete(_name);
+    CreateLineObj(_lows[0], _name, 1, LineStyle0, LineColorLow0);
   }
   if(gHighs[1] != _highs[1]) {
     gHighs[1] = _highs[1];
-    CreateLineObj(_highs[1], LineNo, 1, LineStyle1, LineColorHigh1);
+    Print("OnCalculate update _highs[1]:" + _highs[1]);
+    int _lineNo = 2;
+    string _name = Objname + _lineNo;
+    ObjectDelete(_name);
+    CreateLineObj(_highs[1], _name, 1, LineStyle1, LineColorHigh1);
   }
   if(gLows[1] != _lows[1]) {
     gLows[1] = _lows[1];
-    CreateLineObj(_lows[1], LineNo, 1, LineStyle1, LineColorLow1);
+    Print("OnCalculate update _lows[1]:" + _lows[1]);
+    int _lineNo = 3;
+    string _name = Objname + _lineNo;
+    ObjectDelete(_name);
+    CreateLineObj(_lows[1], _name, 1, LineStyle1, LineColorLow1);
   }
   if(gHighs[2] != _highs[2]) {
     gHighs[2] = _highs[2];
-    CreateLineObj(_highs[2], LineNo, 1, LineStyle2, LineColorHigh2);
+    Print("OnCalculate update _highs[2]:" + _highs[2]);
+    int _lineNo = 4;
+    string _name = Objname + _lineNo;
+    ObjectDelete(_name);
+    CreateLineObj(_highs[2], _name, 1, LineStyle2, LineColorHigh2);
   }
   if(gLows[2] != _lows[2]) {
     gLows[2] = _lows[2];
-    CreateLineObj(_lows[2], LineNo, 1, LineStyle2, LineColorLow2);
+    Print("OnCalculate update _lows[2]:" + _lows[2]);
+    int _lineNo = 5;
+    string _name = Objname + _lineNo;
+    ObjectDelete(_name);
+    CreateLineObj(_lows[2], _name, 1, LineStyle2, LineColorLow2);
   }
   return(0);
 }
 
 // ラインを引く
-void CreateLineObj(double dt, int aLineNo, int aWidth, int aStyle, color aColor){
-  string _name = Objname + LineNo;
-  ObjectCreate(_name, OBJ_HLINE, 0, 0, dt);
-  ObjectSet(_name, OBJPROP_WIDTH, aWidth);
-  ObjectSet(_name, OBJPROP_STYLE, aStyle);
-  ObjectSet(_name, OBJPROP_COLOR, aColor);
-  LineNo++;
+void CreateLineObj(double dt, string aLineName, int aWidth, int aStyle, color aColor){
+  ObjectCreate(aLineName, OBJ_HLINE, 0, 0, dt);
+  ObjectSet(aLineName, OBJPROP_WIDTH, aWidth);
+  ObjectSet(aLineName, OBJPROP_STYLE, aStyle);
+  ObjectSet(aLineName, OBJPROP_COLOR, aColor);
 }
 
 
