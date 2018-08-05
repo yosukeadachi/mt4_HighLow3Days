@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.01"
+#property version   "1.02"
 #property strict
 #property indicator_chart_window
 
@@ -134,6 +134,7 @@ void CreateLineObj(double dt, string aLineName, int aWidth, int aStyle, color aC
   ObjectSet(aLineName, OBJPROP_WIDTH, aWidth);
   ObjectSet(aLineName, OBJPROP_STYLE, aStyle);
   ObjectSet(aLineName, OBJPROP_COLOR, aColor);
+  ObjectSetText(aLineName, aLineName , 11 , "ＭＳ　ゴシック" , clrWhite); 
 }
 
 
