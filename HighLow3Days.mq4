@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.13"
+#property version   "1.14"
 #property strict
 #property indicator_chart_window
 
@@ -82,7 +82,7 @@ void OnChartEvent(
                  const double& dparam,  // double型イベント
                  const string& sparam)  // string型イベント
 {
-    if ( id == CHARTEVENT_OBJECT_CLICK) {         // オブジェクトがクリックされた
+    if (id == CHARTEVENT_CHART_CHANGE){         // オブジェクトがクリックされた
       UpdateLineObjAll();
     }
 }
@@ -99,6 +99,7 @@ void CreateLineObj(double dt, string aName, int aDayIndex, int aWidth, int aStyl
   //ラベル
   int pixcel_x,pixcel_y;
   ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y);
+  pixcel_x = 0;
 
   // テキストラベルオブジェクト生成
   string _labelObjName = CreateLabelObjName(_name);
@@ -119,6 +120,8 @@ void UpdateLineObj(double dt, string aName, int aDayIndex) {
 
   int pixcel_x,pixcel_y;
   ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y);
+  pixcel_x = 0;
+
   string _labelObjName = CreateLabelObjName(_name);
   ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // テキストラベルオブジェクトX軸位置設定
   ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
