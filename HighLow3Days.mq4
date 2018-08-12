@@ -5,33 +5,39 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.02"
+#property version   "1.10"
 #property strict
 #property indicator_chart_window
 
-extern string  Line0 = "--   LineStyle 0-5   --";
-extern int     LineStyle0 = 0;
-extern int     LineStyle1 = 0;
-extern int     LineStyle2 = 0;
-extern color   LineColorHigh0 = Red;
-extern color   LineColorLow0 = Red;
-extern color   LineColorHigh1 = Green;
-extern color   LineColorLow1 = Green;
-extern color   LineColorHigh2 = Blue;
-extern color   LineColorLow2 = Blue;
+static const int DAYS = 4;
+static const int LINE_WIDTH = 1;
+static color  LineHighStyles[] = {0, 0, 0, 0};
+static color  LineLowStyles[] = {0, 0, 0, 0};
 
-static string  Objname = "USDJPY_Line";
-static int times = 0;
+static color  LineHighColors[] = {Red, Green, Blue, Yellow};
+static color  LineLowColors[] = {Red, Green, Blue, Yellow};
 
-static double gHighs[3] = {0,0,0};
-static double gLows[3] = {0,0,0};
+
+static string  ObjNameHigh = "H";
+static string  ObjNameLow = "L";
+static const int FONT_SIZE = 8;
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
 int init(){
-   
-   return(0);
+
+  for(int i = 0; i < DAYS; i++) {
+    double _high = iHigh(NULL,PERIOD_D1,i);
+    printf("init _highs[%d]:%f",i, _high);
+    CreateLineObj(_high, ObjNameHigh, i, LINE_WIDTH, LineHighStyles[i], LineHighColors[i]);
+
+    double _low = iLow(NULL,PERIOD_D1,i);
+    printf("init _lows[%d]:%f",i, _low);
+    CreateLineObj(_low, ObjNameLow, i, LINE_WIDTH, LineLowStyles[i], LineLowColors[i]);
+  }
+
+  return(0);
 }
   
   
@@ -39,14 +45,11 @@ int init(){
 //| Custom indicator deinitialization function                       |
 //+------------------------------------------------------------------+
 int deinit(){
-   
-   string name;
-
-   for(int i = 0; i < ArraySize(gHighs) + ArraySize(gLows); i++){
-      name = Objname + i;
-      ObjectDelete(name);
-   }
-   return(0);
+  for(int i = 0; i < DAYS; i++){
+    DeleteLineObj(ObjNameHigh, i);
+    DeleteLineObj(ObjNameLow, i);
+  }
+  return(0);
 }
   
 //+------------------------------------------------------------------+
@@ -61,80 +64,67 @@ int OnCalculate(const int rates_total,
                 const double &close[],
                 const long& tick_volume[],
                 const long& volume[],
-                const int& spread[])
-{   
-  double Decimal;         //å°æ•°ç‚¹ã®ä½ç½®
-  if(Point == 0.01) Decimal = 100;
-  else Decimal = 10000;
-  
-  double _highs[3] = {0,0,0};
-  double _lows[3] = {0,0,0};
+                const int& spread[]) {
 
-  _highs[0] = iHigh(NULL,PERIOD_D1,0);
-  _highs[1] = iHigh(NULL,PERIOD_D1,1);
-  _highs[2] = iHigh(NULL,PERIOD_D1,2);
-  _lows[0] = iLow(NULL,PERIOD_D1,0);
-  _lows[1] = iLow(NULL,PERIOD_D1,1);
-  _lows[2] = iLow(NULL,PERIOD_D1,2);
-  // Print("OnCalculate _highs[0]:" + _highs[0]);
-  if(gHighs[0] != _highs[0]) {
-    gHighs[0] = _highs[0];
-    Print("OnCalculate update _highs[0]:" + _highs[0]);
-    int _lineNo = 0;
-    string _name = Objname + _lineNo;
-    ObjectDelete(_name);
-    CreateLineObj(_highs[0], _name, 1, LineStyle0, LineColorHigh0);
+  for(int i = 0; i < DAYS; i++) {
+    double _high = iHigh(NULL,PERIOD_D1,i);
+    printf("OnCalculate _highs[%d]:%f",i, _high);
+    UpdateLineObj(_high, ObjNameHigh, i);
+
+    double _low = iLow(NULL,PERIOD_D1,i);
+    printf("OnCalculate _lows[%d]:%f",i, _low);
+    UpdateLineObj(_low, ObjNameLow, i);
   }
-  if(gLows[0] != _lows[0]) {
-    gLows[0] = _lows[0];
-    Print("OnCalculate update _lows[0]:" + _lows[0]);
-    int _lineNo = 1;
-    string _name = Objname + _lineNo;
-    ObjectDelete(_name);
-    CreateLineObj(_lows[0], _name, 1, LineStyle0, LineColorLow0);
-  }
-  if(gHighs[1] != _highs[1]) {
-    gHighs[1] = _highs[1];
-    Print("OnCalculate update _highs[1]:" + _highs[1]);
-    int _lineNo = 2;
-    string _name = Objname + _lineNo;
-    ObjectDelete(_name);
-    CreateLineObj(_highs[1], _name, 1, LineStyle1, LineColorHigh1);
-  }
-  if(gLows[1] != _lows[1]) {
-    gLows[1] = _lows[1];
-    Print("OnCalculate update _lows[1]:" + _lows[1]);
-    int _lineNo = 3;
-    string _name = Objname + _lineNo;
-    ObjectDelete(_name);
-    CreateLineObj(_lows[1], _name, 1, LineStyle1, LineColorLow1);
-  }
-  if(gHighs[2] != _highs[2]) {
-    gHighs[2] = _highs[2];
-    Print("OnCalculate update _highs[2]:" + _highs[2]);
-    int _lineNo = 4;
-    string _name = Objname + _lineNo;
-    ObjectDelete(_name);
-    CreateLineObj(_highs[2], _name, 1, LineStyle2, LineColorHigh2);
-  }
-  if(gLows[2] != _lows[2]) {
-    gLows[2] = _lows[2];
-    Print("OnCalculate update _lows[2]:" + _lows[2]);
-    int _lineNo = 5;
-    string _name = Objname + _lineNo;
-    ObjectDelete(_name);
-    CreateLineObj(_lows[2], _name, 1, LineStyle2, LineColorLow2);
-  }
+  WindowRedraw();
+
   return(0);
 }
 
-// ãƒ©ã‚¤ãƒ³ã‚’å¼•ã
-void CreateLineObj(double dt, string aLineName, int aWidth, int aStyle, color aColor){
-  ObjectCreate(aLineName, OBJ_HLINE, 0, 0, dt);
-  ObjectSet(aLineName, OBJPROP_WIDTH, aWidth);
-  ObjectSet(aLineName, OBJPROP_STYLE, aStyle);
-  ObjectSet(aLineName, OBJPROP_COLOR, aColor);
-  ObjectSetText(aLineName, aLineName , 11 , "ï¼­ï¼³ã€€ã‚´ã‚·ãƒƒã‚¯" , clrWhite); 
+// ƒ‰ƒCƒ“ŠÖ˜A‚ðì¬
+void CreateLineObj(double dt, string aName, int aDayIndex, int aWidth, int aStyle, color aColor){
+  string _name = CreateLineObjName(aName, aDayIndex);
+  ObjectCreate(_name, OBJ_HLINE, 0, 0, dt);
+  ObjectSet(_name, OBJPROP_WIDTH, aWidth);
+  ObjectSet(_name, OBJPROP_STYLE, aStyle);
+  ObjectSet(_name, OBJPROP_COLOR, aColor);
+
+  // Time[10]‚ÆClose[10]‚ÌƒsƒNƒZƒ‹À•WŽæ“¾
+  int pixcel_x,pixcel_y;
+  ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y );
+  pixcel_x = 0;
+
+  // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒg¶¬
+  string _labelObjName = CreateLabelObjName(_name);
+  ObjectCreate(_labelObjName,OBJ_LABEL,0,0,0);               // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒg¶¬
+  ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒgXŽ²ˆÊ’uÝ’è
+  ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒgYŽ²ˆÊ’uÝ’è
+  ObjectSetText(_labelObjName, _name , FONT_SIZE , "‚l‚r@ƒSƒVƒbƒN" , aColor); // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒgAƒeƒLƒXƒgƒ^ƒCƒvÝ’è
+  Print("desc:" + _name + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
+}
+
+// ƒ‰ƒCƒ“ŠÖ˜A‚ðXV
+void UpdateLineObj(double dt, string aName, int aDayIndex) {
+  string _name = CreateLineObjName(aName, aDayIndex);
+  if(ObjectSet(_name, OBJPROP_PRICE1, dt) == false){
+    Print(__FUNCTION__, " ObjectSet Error : ", GetLastError());
+  }
+} 
+
+// ƒ‰ƒCƒ“ŠÖ˜A‚ðíœ
+void DeleteLineObj(string aName, int aDayIndex) {
+  string _name = CreateLineObjName(aName, aDayIndex);
+  ObjectDelete(_name);
+  ObjectDelete(CreateLabelObjName(_name));
+}
+
+// ƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒg–¼ì¬
+string CreateLabelObjName(string aLineName) {
+  return aLineName+"ƒ‰ƒxƒ‹";
+}
+
+// ƒ‰ƒCƒ“ƒIƒuƒWƒFƒNƒg–¼¶¬
+string CreateLineObjName(string aName, int aDayIndex) {
+  return aName + IntegerToString(aDayIndex);
 }
 
 
