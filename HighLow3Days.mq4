@@ -5,22 +5,24 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.10"
+#property version   "1.111"
 #property strict
 #property indicator_chart_window
 
-static const int DAYS = 4;
-static const int LINE_WIDTH = 1;
-static color  LineHighStyles[] = {0, 0, 0, 0};
-static color  LineLowStyles[] = {0, 0, 0, 0};
+static const int DAYS = 4;  //表示する日数
 
-static color  LineHighColors[] = {Red, Green, Blue, Yellow};
-static color  LineLowColors[] = {Red, Green, Blue, Yellow};
+//ライン
+static const int LINE_WIDTH = 1;  //ライン幅
+static color  LineHighStyles[] = {0, 0, 0, 0};  //高値ラインスタイル
+static color  LineLowStyles[] = {0, 0, 0, 0}; //安値ラインスタイル
+static color  LineHighColors[] = {Red, Green, Blue, Yellow};  //高値ライン色
+static color  LineLowColors[] = {Red, Green, Blue, Yellow}; //安値ライン色
 
-
-static string  ObjNameHigh = "H";
-static string  ObjNameLow = "L";
-static const int FONT_SIZE = 8;
+//ラベル
+static string  ObjNameHigh = "H"; //高値ラベル
+static string  ObjNameLow = "L";  //安値ラベル
+static const int FONT_SIZE = 10; //フォントサイズ
+static int printedYs[] = {0,0,0,0};
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -82,16 +84,16 @@ int OnCalculate(const int rates_total,
 
 // ライン関連を作成
 void CreateLineObj(double dt, string aName, int aDayIndex, int aWidth, int aStyle, color aColor){
+  //ライン
   string _name = CreateLineObjName(aName, aDayIndex);
   ObjectCreate(_name, OBJ_HLINE, 0, 0, dt);
   ObjectSet(_name, OBJPROP_WIDTH, aWidth);
   ObjectSet(_name, OBJPROP_STYLE, aStyle);
   ObjectSet(_name, OBJPROP_COLOR, aColor);
 
-  // Time[10]とClose[10]のピクセル座標取得
+  //ラベル
   int pixcel_x,pixcel_y;
-  ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y );
-  pixcel_x = 0;
+  ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y);
 
   // テキストラベルオブジェクト生成
   string _labelObjName = CreateLabelObjName(_name);
