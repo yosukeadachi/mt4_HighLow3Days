@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.12"
+#property version   "1.13"
 #property strict
 #property indicator_chart_window
 
@@ -15,12 +15,12 @@ static const int DAYS = 4;  //表示する日数
 static const int LINE_WIDTH = 1;  //ライン幅
 static color  LineHighStyles[] = {0, 0, 0, 0};  //高値ラインスタイル
 static color  LineLowStyles[] = {0, 0, 0, 0}; //安値ラインスタイル
-static color  LineHighColors[] = {Red, Green, Blue, Yellow};  //高値ライン色
-static color  LineLowColors[] = {Red, Green, Blue, Yellow}; //安値ライン色
+static color  LineHighColors[] = {Red, Green, Blue, Orange};  //高値ライン色
+static color  LineLowColors[] = {Red, Green, Blue, Orange}; //安値ライン色
 
 //ラベル
-static string  ObjNameHigh = "H"; //高値ラベル
-static string  ObjNameLow = "L";  //安値ラベル
+static string  ObjNameHigh = "High"; //高値ラベル
+static string  ObjNameLow = "Low";  //安値ラベル
 static const int FONT_SIZE = 10; //フォントサイズ
 static int printedYs[] = {0,0,0,0};
 
@@ -105,7 +105,8 @@ void CreateLineObj(double dt, string aName, int aDayIndex, int aWidth, int aStyl
   ObjectCreate(_labelObjName,OBJ_LABEL,0,0,0);               // テキストラベルオブジェクト生成
   ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // テキストラベルオブジェクトX軸位置設定
   ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
-  ObjectSetText(_labelObjName, _name , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
+  string _labelStr = "(" + IntegerToString(aDayIndex) + ")" + aName;
+  ObjectSetText(_labelObjName, _labelStr , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
   Print("desc:" + _name + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
 }
 
