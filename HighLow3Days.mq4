@@ -5,23 +5,23 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.111"
+#property version   "1.12"
 #property strict
 #property indicator_chart_window
 
-static const int DAYS = 4;  //•\¦‚·‚é“ú”
+static const int DAYS = 4;  //è¡¨ç¤ºã™ã‚‹æ—¥æ•°
 
-//ƒ‰ƒCƒ“
-static const int LINE_WIDTH = 1;  //ƒ‰ƒCƒ“•
-static color  LineHighStyles[] = {0, 0, 0, 0};  //‚’lƒ‰ƒCƒ“ƒXƒ^ƒCƒ‹
-static color  LineLowStyles[] = {0, 0, 0, 0}; //ˆÀ’lƒ‰ƒCƒ“ƒXƒ^ƒCƒ‹
-static color  LineHighColors[] = {Red, Green, Blue, Yellow};  //‚’lƒ‰ƒCƒ“F
-static color  LineLowColors[] = {Red, Green, Blue, Yellow}; //ˆÀ’lƒ‰ƒCƒ“F
+//ãƒ©ã‚¤ãƒ³
+static const int LINE_WIDTH = 1;  //ãƒ©ã‚¤ãƒ³å¹…
+static color  LineHighStyles[] = {0, 0, 0, 0};  //é«˜å€¤ãƒ©ã‚¤ãƒ³ã‚¹ã‚¿ã‚¤ãƒ«
+static color  LineLowStyles[] = {0, 0, 0, 0}; //å®‰å€¤ãƒ©ã‚¤ãƒ³ã‚¹ã‚¿ã‚¤ãƒ«
+static color  LineHighColors[] = {Red, Green, Blue, Yellow};  //é«˜å€¤ãƒ©ã‚¤ãƒ³è‰²
+static color  LineLowColors[] = {Red, Green, Blue, Yellow}; //å®‰å€¤ãƒ©ã‚¤ãƒ³è‰²
 
-//ƒ‰ƒxƒ‹
-static string  ObjNameHigh = "H"; //‚’lƒ‰ƒxƒ‹
-static string  ObjNameLow = "L";  //ˆÀ’lƒ‰ƒxƒ‹
-static const int FONT_SIZE = 10; //ƒtƒHƒ“ƒgƒTƒCƒY
+//ãƒ©ãƒ™ãƒ«
+static string  ObjNameHigh = "H"; //é«˜å€¤ãƒ©ãƒ™ãƒ«
+static string  ObjNameLow = "L";  //å®‰å€¤ãƒ©ãƒ™ãƒ«
+static const int FONT_SIZE = 10; //ãƒ•ã‚©ãƒ³ãƒˆã‚µã‚¤ã‚º
 static int printedYs[] = {0,0,0,0};
 
 //+------------------------------------------------------------------+
@@ -68,63 +68,88 @@ int OnCalculate(const int rates_total,
                 const long& volume[],
                 const int& spread[]) {
 
-  for(int i = 0; i < DAYS; i++) {
-    double _high = iHigh(NULL,PERIOD_D1,i);
-    printf("OnCalculate _highs[%d]:%f",i, _high);
-    UpdateLineObj(_high, ObjNameHigh, i);
-
-    double _low = iLow(NULL,PERIOD_D1,i);
-    printf("OnCalculate _lows[%d]:%f",i, _low);
-    UpdateLineObj(_low, ObjNameLow, i);
-  }
-  WindowRedraw();
+  UpdateLineObjAll();
 
   return(0);
 }
 
-// ƒ‰ƒCƒ“ŠÖ˜A‚ğì¬
+//+------------------------------------------------------------------+
+//| ã‚¤ãƒ™ãƒ³ãƒˆé–¢æ•°                                              |
+//+------------------------------------------------------------------+
+void OnChartEvent(
+                 const int     id,      // ã‚¤ãƒ™ãƒ³ãƒˆID
+                 const long&   lparam,  // longå‹ã‚¤ãƒ™ãƒ³ãƒˆ
+                 const double& dparam,  // doubleå‹ã‚¤ãƒ™ãƒ³ãƒˆ
+                 const string& sparam)  // stringå‹ã‚¤ãƒ™ãƒ³ãƒˆ
+{
+    if ( id == CHARTEVENT_OBJECT_CLICK) {         // ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãŒã‚¯ãƒªãƒƒã‚¯ã•ã‚ŒãŸ
+      UpdateLineObjAll();
+    }
+}
+
+// ãƒ©ã‚¤ãƒ³é–¢é€£ã‚’ä½œæˆ
 void CreateLineObj(double dt, string aName, int aDayIndex, int aWidth, int aStyle, color aColor){
-  //ƒ‰ƒCƒ“
+  //ãƒ©ã‚¤ãƒ³
   string _name = CreateLineObjName(aName, aDayIndex);
   ObjectCreate(_name, OBJ_HLINE, 0, 0, dt);
   ObjectSet(_name, OBJPROP_WIDTH, aWidth);
   ObjectSet(_name, OBJPROP_STYLE, aStyle);
   ObjectSet(_name, OBJPROP_COLOR, aColor);
 
-  //ƒ‰ƒxƒ‹
+  //ãƒ©ãƒ™ãƒ«
   int pixcel_x,pixcel_y;
   ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y);
 
-  // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒg¶¬
+  // ãƒ†ã‚­ã‚¹ãƒˆãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
   string _labelObjName = CreateLabelObjName(_name);
-  ObjectCreate(_labelObjName,OBJ_LABEL,0,0,0);               // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒg¶¬
-  ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒgX²ˆÊ’uİ’è
-  ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒgY²ˆÊ’uİ’è
-  ObjectSetText(_labelObjName, _name , FONT_SIZE , "‚l‚r@ƒSƒVƒbƒN" , aColor); // ƒeƒLƒXƒgƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒgAƒeƒLƒXƒgƒ^ƒCƒvİ’è
+  ObjectCreate(_labelObjName,OBJ_LABEL,0,0,0);               // ãƒ†ã‚­ã‚¹ãƒˆãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
+  ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // ãƒ†ã‚­ã‚¹ãƒˆãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆXè»¸ä½ç½®è¨­å®š
+  ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // ãƒ†ã‚­ã‚¹ãƒˆãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆYè»¸ä½ç½®è¨­å®š
+  ObjectSetText(_labelObjName, _name , FONT_SIZE , "ï¼­ï¼³ã€€ã‚´ã‚·ãƒƒã‚¯" , aColor); // ãƒ†ã‚­ã‚¹ãƒˆãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã€ãƒ†ã‚­ã‚¹ãƒˆã‚¿ã‚¤ãƒ—è¨­å®š
   Print("desc:" + _name + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
 }
 
-// ƒ‰ƒCƒ“ŠÖ˜A‚ğXV
+// ãƒ©ã‚¤ãƒ³é–¢é€£ã‚’æ›´æ–°
 void UpdateLineObj(double dt, string aName, int aDayIndex) {
   string _name = CreateLineObjName(aName, aDayIndex);
   if(ObjectSet(_name, OBJPROP_PRICE1, dt) == false){
     Print(__FUNCTION__, " ObjectSet Error : ", GetLastError());
   }
+
+  int pixcel_x,pixcel_y;
+  ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y);
+  string _labelObjName = CreateLabelObjName(_name);
+  ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // ãƒ†ã‚­ã‚¹ãƒˆãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆXè»¸ä½ç½®è¨­å®š
+  ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // ãƒ†ã‚­ã‚¹ãƒˆãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆYè»¸ä½ç½®è¨­å®š
 } 
 
-// ƒ‰ƒCƒ“ŠÖ˜A‚ğíœ
+//ã€€ãƒ©ã‚¤ãƒ³é–¢é€£ã‚’å…¨ã¦æ›´æ–°
+void UpdateLineObjAll() {
+  for(int i = 0; i < DAYS; i++) {
+    double _high = iHigh(NULL,PERIOD_D1,i);
+    // printf("OnCalculate _highs[%d]:%f",i, _high);
+    UpdateLineObj(_high, ObjNameHigh, i);
+
+    double _low = iLow(NULL,PERIOD_D1,i);
+    // printf("OnCalculate _lows[%d]:%f",i, _low);
+    UpdateLineObj(_low, ObjNameLow, i);
+  }
+  WindowRedraw();
+}
+
+// ãƒ©ã‚¤ãƒ³é–¢é€£ã‚’å‰Šé™¤
 void DeleteLineObj(string aName, int aDayIndex) {
   string _name = CreateLineObjName(aName, aDayIndex);
   ObjectDelete(_name);
   ObjectDelete(CreateLabelObjName(_name));
 }
 
-// ƒ‰ƒxƒ‹ƒIƒuƒWƒFƒNƒg–¼ì¬
+// ãƒ©ãƒ™ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆåä½œæˆ
 string CreateLabelObjName(string aLineName) {
-  return aLineName+"ƒ‰ƒxƒ‹";
+  return aLineName+"ãƒ©ãƒ™ãƒ«";
 }
 
-// ƒ‰ƒCƒ“ƒIƒuƒWƒFƒNƒg–¼¶¬
+// ãƒ©ã‚¤ãƒ³ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆåç”Ÿæˆ
 string CreateLineObjName(string aName, int aDayIndex) {
   return aName + IntegerToString(aDayIndex);
 }
