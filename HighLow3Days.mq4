@@ -5,18 +5,15 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "1.14"
+#property version   "2.02"
 #property strict
 #property indicator_chart_window
+#property indicator_buffers 8
 
-static const int DAYS = 4;  //表示する日数
+#define DAYS  4  //表示する日数
 
-//ライン
-static const int LINE_WIDTH = 1;  //ライン幅
-static color  LineHighStyles[] = {0, 0, 0, 0};  //高値ラインスタイル
-static color  LineLowStyles[] = {0, 0, 0, 0}; //安値ラインスタイル
-static color  LineHighColors[] = {Red, Green, Blue, Orange};  //高値ライン色
-static color  LineLowColors[] = {Red, Green, Blue, Orange}; //安値ライン色
+//色
+static color Colors[] = {Red, Green, Blue, Orange};
 
 //ラベル
 static string  ObjNameHigh = "High"; //高値ラベル
@@ -24,34 +21,57 @@ static string  ObjNameLow = "Low";  //安値ラベル
 static const int FONT_SIZE = 10; //フォントサイズ
 static int printedYs[] = {0,0,0,0};
 
+//---- indicator buffers
+static const int INIDICATOR_BUFFERS_COUNT = 8;
+struct StructBufferInfo {
+  int dayIndex;
+  double high[];
+  double low[];
+  color c;
+  string nameHigh;
+  string nameLow;
+};
+StructBufferInfo Buffers[DAYS];
+
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
-int init(){
-
-  for(int i = 0; i < DAYS; i++) {
-    double _high = iHigh(NULL,PERIOD_D1,i);
-    printf("init _highs[%d]:%f",i, _high);
-    CreateLineObj(_high, ObjNameHigh, i, LINE_WIDTH, LineHighStyles[i], LineHighColors[i]);
-
-    double _low = iLow(NULL,PERIOD_D1,i);
-    printf("init _lows[%d]:%f",i, _low);
-    CreateLineObj(_low, ObjNameLow, i, LINE_WIDTH, LineLowStyles[i], LineLowColors[i]);
+int OnInit(){
+  // buffer settings
+  for(int i = 0; i < ArraySize(Buffers); i++) {
+    Buffers[i].dayIndex = i;
+    Buffers[i].c = Colors[i];
+    Buffers[i].nameHigh = GenerateLabelObjName(i, ObjNameHigh);
+    Buffers[i].nameLow = GenerateLabelObjName(i, ObjNameLow);
   }
 
-  return(0);
+  //--- 1 additional buffers
+  IndicatorBuffers(INIDICATOR_BUFFERS_COUNT);
+  //---- indicator buffers
+  for(int i = 0; i < ArraySize(Buffers); i++) {
+    SetIndexBuffer((i*2)+0,Buffers[i].high);
+    SetIndexBuffer((i*2)+1,Buffers[i].low);
+    ArrayInitialize(Buffers[i].high,0.0);
+    ArrayInitialize(Buffers[i].low,0.0);
+  }
+
+  //---- drawing settings
+  for(int i = 0; i < INIDICATOR_BUFFERS_COUNT; i++) {
+    SetIndexStyle(i,DRAW_LINE,STYLE_SOLID,1,Buffers[i/2].c);
+  }
+  //---- indicator short name
+  IndicatorShortName("HighLowDays");
+
+  CreateLabelAll(Buffers);
+  return(INIT_SUCCEEDED);
 }
   
   
 //+------------------------------------------------------------------+
 //| Custom indicator deinitialization function                       |
 //+------------------------------------------------------------------+
-int deinit(){
-  for(int i = 0; i < DAYS; i++){
-    DeleteLineObj(ObjNameHigh, i);
-    DeleteLineObj(ObjNameLow, i);
-  }
-  return(0);
+void OnDeinit(const int reason){
+  DeleteLabelAll(Buffers);
 }
   
 //+------------------------------------------------------------------+
@@ -68,7 +88,7 @@ int OnCalculate(const int rates_total,
                 const long& volume[],
                 const int& spread[]) {
 
-  UpdateLineObjAll();
+  UpdateLabelObjAll(Buffers);
 
   return(0);
 }
@@ -82,81 +102,103 @@ void OnChartEvent(
                  const double& dparam,  // double型イベント
                  const string& sparam)  // string型イベント
 {
-    if (id == CHARTEVENT_CHART_CHANGE){         // オブジェクトがクリックされた
-      UpdateLineObjAll();
-    }
+  if (id == CHARTEVENT_CHART_CHANGE){         // オブジェクトがクリックされた
+    UpdateLabelObjAll(Buffers);
+  }
 }
 
-// ライン関連を作成
-void CreateLineObj(double dt, string aName, int aDayIndex, int aWidth, int aStyle, color aColor){
-  //ライン
-  string _name = CreateLineObjName(aName, aDayIndex);
-  ObjectCreate(_name, OBJ_HLINE, 0, 0, dt);
-  ObjectSet(_name, OBJPROP_WIDTH, aWidth);
-  ObjectSet(_name, OBJPROP_STYLE, aStyle);
-  ObjectSet(_name, OBJPROP_COLOR, aColor);
+// ラベル名生成
+string GenerateLabelObjName(int aDayIndex, string aName) {
+  return "(" + IntegerToString(aDayIndex) + ")" + aName;
+}
 
-  //ラベル
+//--------------
+// 作成
+// ラベル関連を作成
+void CreateLabel(string aName, color aColor){
   int pixcel_x,pixcel_y;
-  ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y);
+  ChartTimePriceToXY( 0,0, Time[0], 0, pixcel_x,pixcel_y);
   pixcel_x = 0;
-
   // テキストラベルオブジェクト生成
-  string _labelObjName = CreateLabelObjName(_name);
+  string _labelObjName = aName;
   ObjectCreate(_labelObjName,OBJ_LABEL,0,0,0);               // テキストラベルオブジェクト生成
   ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // テキストラベルオブジェクトX軸位置設定
   ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
-  string _labelStr = "(" + IntegerToString(aDayIndex) + ")" + aName;
-  ObjectSetText(_labelObjName, _labelStr , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
-  Print("desc:" + _name + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
+  ObjectSetText(_labelObjName, _labelObjName , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
+  // Print("desc:" + _labelObjName + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
 }
 
-// ライン関連を更新
-void UpdateLineObj(double dt, string aName, int aDayIndex) {
-  string _name = CreateLineObjName(aName, aDayIndex);
-  if(ObjectSet(_name, OBJPROP_PRICE1, dt) == false){
-    Print(__FUNCTION__, " ObjectSet Error : ", GetLastError());
+// ラベル関連を作成 high&low
+void CreateLabelHighLow(StructBufferInfo &aBuffer){
+  CreateLabel(aBuffer.nameHigh, aBuffer.c);
+  CreateLabel(aBuffer.nameLow, aBuffer.c);
+}
+
+// ラベル関連を全て作成
+void CreateLabelAll(StructBufferInfo &aBuffers[]){
+  for(int i = 0; i < ArraySize(aBuffers); i++) {
+    CreateLabelHighLow(aBuffers[i]);
   }
+}
 
+//--------------
+// 更新
+// ラベル関連を更新
+void UpdateLabel(string aName, double aValue) {
   int pixcel_x,pixcel_y;
-  ChartTimePriceToXY( 0,0, Time[0],dt, pixcel_x,pixcel_y);
+  ChartTimePriceToXY( 0,0, Time[0],aValue, pixcel_x,pixcel_y);
   pixcel_x = 0;
-
-  string _labelObjName = CreateLabelObjName(_name);
+  string _labelObjName = aName;
   ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // テキストラベルオブジェクトX軸位置設定
   ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
+
+}
+
+// ラベル関連を更新 high&Low
+void UpdateLabelHighLow(StructBufferInfo &aBuffer) {
+  double _high = iHigh(NULL,PERIOD_D1,aBuffer.dayIndex);
+  // printf("%d high:%f", day, _high);
+  double _low = iLow(NULL,PERIOD_D1,aBuffer.dayIndex);
+  // printf("%d low:%f", day, _low);
+  for(int bar = 0; bar < Bars; bar++) {
+    if(ArraySize(aBuffer.high) > 0) {
+      aBuffer.high[bar] = _high;
+      UpdateLabel(aBuffer.nameHigh, aBuffer.high[0]);
+    }
+    if(ArraySize(aBuffer.low) > 0) {
+      aBuffer.low[bar] = _low;
+      UpdateLabel(aBuffer.nameLow, aBuffer.low[0]);
+    }
+  }
 } 
 
-//　ライン関連を全て更新
-void UpdateLineObjAll() {
-  for(int i = 0; i < DAYS; i++) {
-    double _high = iHigh(NULL,PERIOD_D1,i);
-    // printf("OnCalculate _highs[%d]:%f",i, _high);
-    UpdateLineObj(_high, ObjNameHigh, i);
-
-    double _low = iLow(NULL,PERIOD_D1,i);
-    // printf("OnCalculate _lows[%d]:%f",i, _low);
-    UpdateLineObj(_low, ObjNameLow, i);
+//　ラベル関連を全て更新
+void UpdateLabelObjAll(StructBufferInfo &aBuffers[]) {
+  for(int day = 0; day < ArraySize(aBuffers); day++) {
+    UpdateLabelHighLow(aBuffers[day]);
   }
-  WindowRedraw();
 }
 
-// ライン関連を削除
-void DeleteLineObj(string aName, int aDayIndex) {
-  string _name = CreateLineObjName(aName, aDayIndex);
-  ObjectDelete(_name);
-  ObjectDelete(CreateLabelObjName(_name));
+//--------------
+// 削除
+// ラベル関連を削除
+void DeleteLabel(string aName) {
+  ObjectDelete(aName);
 }
 
-// ラベルオブジェクト名作成
-string CreateLabelObjName(string aLineName) {
-  return aLineName+"ラベル";
+// ラベル関連を削除 high&low
+void DeleteLabelHighLow(StructBufferInfo &aBuffer) {
+  DeleteLabel(aBuffer.nameHigh);
+  DeleteLabel(aBuffer.nameLow);
 }
 
-// ラインオブジェクト名生成
-string CreateLineObjName(string aName, int aDayIndex) {
-  return aName + IntegerToString(aDayIndex);
+// ラベル関連を全て削除
+void DeleteLabelAll(StructBufferInfo &aBuffers[]) {
+  for(int i = 0; i < ArraySize(aBuffers); i++){
+    DeleteLabelHighLow(aBuffers[i]);
+  }
 }
+
 
 
 
