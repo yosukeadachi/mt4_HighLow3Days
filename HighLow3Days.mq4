@@ -204,7 +204,7 @@ void UpdateLabel(string aName, double aValue, datetime aDatetime, color aColor) 
   ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
   //ラベル文字
   string _labelStr = _labelObjName + "/" + TimeToStr(aDatetime, TIME_DATE);
-  printf("UpdateLabel obj:%s str:%s", _labelObjName, _labelStr);
+  // printf("UpdateLabel obj:%s str:%s", _labelObjName, _labelStr);
   ObjectSetText(_labelObjName, _labelStr , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
 }
 
@@ -219,10 +219,10 @@ void UpdateLabelHighLow(StructBufferInfo &aBuffer) {
   }
 
   double _high = aBuffer.highest;
-  printf("%d high:%f", aBuffer.dayIndex, _high);
+  // printf("%d high:%f", aBuffer.dayIndex, _high);
   commentStr += "" + IntegerToString(aBuffer.dayIndex) + " high:" + DoubleToString(_high) + " " + TimeToStr(aBuffer.date, TIME_DATE|TIME_MINUTES) + "\n";
   double _low = aBuffer.lowest;
-  printf("%d low:%f", aBuffer.dayIndex, _low);
+  // printf("%d low:%f", aBuffer.dayIndex, _low);
   commentStr += "" + IntegerToString(aBuffer.dayIndex) + " low:" + DoubleToString(_low) + " " + TimeToStr(aBuffer.date, TIME_DATE|TIME_MINUTES) + "\n";
   for(int bar = 0; bar < Bars; bar++) {
     aBuffer.high[bar] = _high;
@@ -239,7 +239,7 @@ void UpdateLabelObjAll(StructBufferInfo &aBuffers[]) {
     // printf("UpdateLabelObjAll aBuffers[%d].dayIndex:%d", day, aBuffers[day].dayIndex);
     UpdateLabelHighLow(aBuffers[day]);
   }
-  Comment(commentStr);
+  // Comment(commentStr);
 }
 
 //--------------
