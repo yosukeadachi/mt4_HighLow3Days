@@ -5,12 +5,15 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "2.03"
+#property version   "2.04"
 #property strict
 #property indicator_chart_window
 #property indicator_buffers 8
 
 #define DAYS  4  //表示する日数
+
+//EAモード
+extern bool isEA = false;
 
 //色
 static color Colors[] = {Red, Green, Blue, Orange};
@@ -42,6 +45,7 @@ string commentStr;
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
 int OnInit(){
+  Print("OnInit");
   // buffer settings
   for(int i = 0; i < ArraySize(Buffers); i++) {
     Buffers[i].dayIndex = i;
@@ -79,6 +83,7 @@ int OnInit(){
 //| Custom indicator deinitialization function                       |
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason){
+  Print("OnDeinit");
   DeleteLabelAll(Buffers);
 }
   
@@ -96,8 +101,8 @@ int OnCalculate(const int rates_total,
                 const long& volume[],
                 const int& spread[]) {
 
+  Print("OnCalculate");
   UpdateLabelObjAll(Buffers);
-
   return(0);
 }
 
@@ -110,6 +115,7 @@ void OnChartEvent(
                  const double& dparam,  // double型イベント
                  const string& sparam)  // string型イベント
 {
+  Print("OnChartEvent");
   if (id == CHARTEVENT_CHART_CHANGE){
     UpdateLabelObjAll(Buffers);
   }
@@ -124,8 +130,11 @@ string GenerateLabelObjName(int aDayIndex, string aName) {
 // 作成
 // ラベル関連を作成
 void CreateLabel(string aName, color aColor, int aBarIndex){
-  int pixcel_x,pixcel_y;
-  ChartTimePriceToXY( 0,0, Time[0], 0, pixcel_x,pixcel_y);
+  int pixcel_x = 0;
+  int pixcel_y = 0;
+  if(ArraySize(Time) > 0) {
+    ChartTimePriceToXY( 0,0, Time[0], 0, pixcel_x,pixcel_y);
+  }
   pixcel_x = 0;
   // テキストラベルオブジェクト生成
   string _labelObjName = aName;
@@ -134,7 +143,7 @@ void CreateLabel(string aName, color aColor, int aBarIndex){
   ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
   string _labelStr = _labelObjName + "/" + TimeToStr(iTime(NULL,PERIOD_D1,aBarIndex),TIME_DATE);//ラベル文字
   ObjectSetText(_labelObjName, _labelStr , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
-  // Print("desc:" + _labelObjName + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
+  Print("desc:" + _labelObjName + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
 }
 
 // ラベル関連を作成 high&low
@@ -196,8 +205,11 @@ void UpdateHighLow(StructBufferInfo &aBuffer) {
 
 // ラベル関連を更新
 void UpdateLabel(string aName, double aValue, datetime aDatetime, color aColor) {
-  int pixcel_x,pixcel_y;
-  ChartTimePriceToXY( 0,0, Time[0],aValue, pixcel_x,pixcel_y);
+  int pixcel_x = 0;
+  int pixcel_y = 0;
+  if(ArraySize(Time) > 0) {
+    ChartTimePriceToXY( 0,0, Time[0],aValue, pixcel_x,pixcel_y);
+  }
   pixcel_x = 0;
   string _labelObjName = aName;
   ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // テキストラベルオブジェクトX軸位置設定
@@ -224,9 +236,17 @@ void UpdateLabelHighLow(StructBufferInfo &aBuffer) {
   double _low = aBuffer.lowest;
   // printf("%d low:%f", aBuffer.dayIndex, _low);
   commentStr += "" + IntegerToString(aBuffer.dayIndex) + " low:" + DoubleToString(_low) + " " + TimeToStr(aBuffer.date, TIME_DATE|TIME_MINUTES) + "\n";
-  for(int bar = 0; bar < Bars; bar++) {
-    aBuffer.high[bar] = _high;
-    aBuffer.low[bar] = _low;
+  int countBars = Bars;
+  if(isEA) {
+    countBars = 1;
+  }
+  for(int bar = 0; bar < countBars; bar++) {
+    if(ArraySize(aBuffer.high) > bar) {
+      aBuffer.high[bar] = _high;
+    }
+    if(ArraySize(aBuffer.low) > bar) {
+      aBuffer.low[bar] = _low;
+    }
   }
   UpdateLabel(aBuffer.nameHigh, _high, aBuffer.date, aBuffer.c);
   UpdateLabel(aBuffer.nameLow, _low, aBuffer.date, aBuffer.c);
