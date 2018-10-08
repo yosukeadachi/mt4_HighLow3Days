@@ -5,15 +5,12 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "2.04"
+#property version   "2.05"
 #property strict
 #property indicator_chart_window
 #property indicator_buffers 8
 
 #define DAYS  4  //表示する日数
-
-//EAモード
-extern bool isEA = false;
 
 //色
 static color Colors[] = {Red, Green, Blue, Orange};
@@ -34,8 +31,12 @@ struct StructBufferInfo {
   double highest;
   double lowest;
   color c;
-  string nameHigh;
-  string nameLow;
+  string nameLabelHigh;
+  string nameLabelLow;
+  string nameLineHigh;
+  string nameLineLow;
+  int lineWidth;
+  int lineStyle;
 };
 StructBufferInfo Buffers[DAYS];
 
@@ -45,7 +46,6 @@ string commentStr;
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
 int OnInit(){
-  Print("OnInit");
   // buffer settings
   for(int i = 0; i < ArraySize(Buffers); i++) {
     Buffers[i].dayIndex = i;
@@ -53,8 +53,12 @@ int OnInit(){
     Buffers[i].highest = 0;
     Buffers[i].lowest = 0;
     Buffers[i].c = Colors[i];
-    Buffers[i].nameHigh = GenerateLabelObjName(i, ObjNameHigh);
-    Buffers[i].nameLow = GenerateLabelObjName(i, ObjNameLow);
+    Buffers[i].nameLabelHigh = GenerateLabelObjName(i, ObjNameHigh);
+    Buffers[i].nameLabelLow = GenerateLabelObjName(i, ObjNameLow);
+    Buffers[i].nameLineHigh = "Line" + GenerateLabelObjName(i, ObjNameHigh);
+    Buffers[i].nameLineLow = "Line" + GenerateLabelObjName(i, ObjNameLow);
+    Buffers[i].lineWidth = 1;
+    Buffers[i].lineStyle = 0;
   }
 
   //--- 1 additional buffers
@@ -74,7 +78,9 @@ int OnInit(){
   //---- indicator short name
   IndicatorShortName("HighLowDays");
 
-  CreateLabelAll(Buffers);
+  CreateLabelObjAll(Buffers);
+  CreateLineObjAll(Buffers);
+  UpdateAll();
   return(INIT_SUCCEEDED);
 }
   
@@ -83,8 +89,8 @@ int OnInit(){
 //| Custom indicator deinitialization function                       |
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason){
-  Print("OnDeinit");
   DeleteLabelAll(Buffers);
+  DeleteLineAll(Buffers);
 }
   
 //+------------------------------------------------------------------+
@@ -101,8 +107,7 @@ int OnCalculate(const int rates_total,
                 const long& volume[],
                 const int& spread[]) {
 
-  Print("OnCalculate");
-  UpdateLabelObjAll(Buffers);
+  UpdateAll();
   return(0);
 }
 
@@ -115,9 +120,8 @@ void OnChartEvent(
                  const double& dparam,  // double型イベント
                  const string& sparam)  // string型イベント
 {
-  Print("OnChartEvent");
   if (id == CHARTEVENT_CHART_CHANGE){
-    UpdateLabelObjAll(Buffers);
+    UpdateAll();
   }
 }
 
@@ -129,77 +133,45 @@ string GenerateLabelObjName(int aDayIndex, string aName) {
 //--------------
 // 作成
 // ラベル関連を作成
-void CreateLabel(string aName, color aColor, int aBarIndex){
-  int pixcel_x = 0;
-  int pixcel_y = 0;
-  if(ArraySize(Time) > 0) {
-    ChartTimePriceToXY( 0,0, Time[0], 0, pixcel_x,pixcel_y);
-  }
-  pixcel_x = 0;
-  // テキストラベルオブジェクト生成
-  string _labelObjName = aName;
-  ObjectCreate(_labelObjName,OBJ_LABEL,0,0,0);               // テキストラベルオブジェクト生成
-  ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // テキストラベルオブジェクトX軸位置設定
-  ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
-  string _labelStr = _labelObjName + "/" + TimeToStr(iTime(NULL,PERIOD_D1,aBarIndex),TIME_DATE);//ラベル文字
-  ObjectSetText(_labelObjName, _labelStr , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
-  Print("desc:" + _labelObjName + "(" + IntegerToString(pixcel_x) + "/" + IntegerToString(pixcel_y) +")");
-}
-
-// ラベル関連を作成 high&low
-void CreateLabelHighLow(StructBufferInfo &aBuffer, int aBarIndex){
-  CreateLabel(aBuffer.nameHigh, aBuffer.c, aBarIndex);
-  CreateLabel(aBuffer.nameLow, aBuffer.c, aBarIndex);
-}
-
 // ラベル関連を全て作成
-void CreateLabelAll(StructBufferInfo &aBuffers[]){
+void CreateLabelObjAll(StructBufferInfo &aBuffers[]){
   for(int i = 0; i < ArraySize(aBuffers); i++) {
-    CreateLabelHighLow(aBuffers[i], i);
+    ObjectCreate(aBuffers[i].nameLabelHigh,OBJ_LABEL,0,0,0);               // テキストラベルオブジェクト生成
+    ObjectCreate(aBuffers[i].nameLabelLow,OBJ_LABEL,0,0,0);               // テキストラベルオブジェクト生成
+  }
+}
+
+// Line
+// ラインを作成
+void CreateLineObj(string aName, int aColor, int aWidth, int aStyle) {
+  string _objName = aName;
+  ObjectCreate(_objName, OBJ_HLINE, 0, 0, 0);
+  ObjectSet(_objName, OBJPROP_COLOR, aColor);
+  ObjectSet(_objName, OBJPROP_WIDTH, aWidth);
+  ObjectSet(_objName, OBJPROP_STYLE, aStyle);
+}
+
+//　ラインを全て作成
+void CreateLineObjAll(StructBufferInfo &aBuffers[]) {
+  for(int i = 0; i < ArraySize(aBuffers); i++) {
+    CreateLineObj(aBuffers[i].nameLineHigh, aBuffers[i].c, aBuffers[i].lineWidth, aBuffers[i].lineStyle);
+    CreateLineObj(aBuffers[i].nameLineLow, aBuffers[i].c, aBuffers[i].lineWidth, aBuffers[i].lineStyle);
   }
 }
 
 //--------------
 // 更新
-//日付更新
-bool UpdateDatetime(StructBufferInfo &aBuffer) {
-  bool _doUpdate = false;
-  //日付更新
-  datetime _new = getNowDatetime() - (aBuffer.dayIndex * 60 * 60 *24);
-  if(aBuffer.date != _new) {
-    aBuffer.date = _new;
-    _doUpdate = true;
-  }
-  if(_new == getNowDatetime()) {
-    _doUpdate = true;
-  }
-  return _doUpdate;
+void UpdateAll() {
+  UpdateHighLow(Buffers);
+  UpdateLabelObjAll(Buffers);
+  UpdateLineObjAll(Buffers);
 }
-//高値安値更新
-void UpdateHighLow(StructBufferInfo &aBuffer) {
-  aBuffer.highest = 0;
-  aBuffer.lowest = 999999999.0f;
-  //highest,lowest 更新
-  datetime _beginDatetime = StrToTime(TimeToStr(aBuffer.date, TIME_DATE) + " 00:00:00");
-  datetime _endDatetime = StrToTime(TimeToStr(aBuffer.date, TIME_DATE) + " 23:59:59");
-  for(int bar = 0; bar < Bars; bar++) {
-    datetime _barDatetime = Time[bar];
-    //範囲が終わっていれば終了
-    if(_barDatetime < _beginDatetime) { 
-      break;
-    }
-    //範囲外なら次へ
-    if((_beginDatetime > _barDatetime) || (_barDatetime > _endDatetime)) {
-      continue;
-    }
 
-    //更新
-    if(aBuffer.highest < High[bar]) {
-      aBuffer.highest = High[bar];
-    }
-    if(aBuffer.lowest > Low[bar]) {
-      aBuffer.lowest = Low[bar];
-    }
+//高値安値更新
+void UpdateHighLow(StructBufferInfo &aBuffers[]) {
+  for(int day = 0; day < ArraySize(aBuffers); day++) {
+    aBuffers[day].highest = iHigh(NULL,PERIOD_D1,aBuffers[day].dayIndex);
+    aBuffers[day].lowest = iLow(NULL,PERIOD_D1,aBuffers[day].dayIndex);
   }
 }
 
@@ -215,17 +187,13 @@ void UpdateLabel(string aName, double aValue, datetime aDatetime, color aColor) 
   ObjectSet(_labelObjName,OBJPROP_XDISTANCE,pixcel_x);    // テキストラベルオブジェクトX軸位置設定
   ObjectSet(_labelObjName,OBJPROP_YDISTANCE,pixcel_y);    // テキストラベルオブジェクトY軸位置設定
   //ラベル文字
-  string _labelStr = _labelObjName + "/" + TimeToStr(aDatetime, TIME_DATE);
+  string _labelStr = _labelObjName;
   // printf("UpdateLabel obj:%s str:%s", _labelObjName, _labelStr);
   ObjectSetText(_labelObjName, _labelStr , FONT_SIZE , "ＭＳ　ゴシック" , aColor); // テキストラベルオブジェクト、テキストタイプ設定
 }
 
 // ラベル関連を更新 high&Low
 void UpdateLabelHighLow(StructBufferInfo &aBuffer) {
-  if(UpdateDatetime(aBuffer)){
-    UpdateHighLow(aBuffer);
-  }
-
   if((ArraySize(aBuffer.high) <= 0) || (ArraySize(aBuffer.low) <= 0)) {
     return;
   }
@@ -237,9 +205,6 @@ void UpdateLabelHighLow(StructBufferInfo &aBuffer) {
   // printf("%d low:%f", aBuffer.dayIndex, _low);
   commentStr += "" + IntegerToString(aBuffer.dayIndex) + " low:" + DoubleToString(_low) + " " + TimeToStr(aBuffer.date, TIME_DATE|TIME_MINUTES) + "\n";
   int countBars = Bars;
-  if(isEA) {
-    countBars = 1;
-  }
   for(int bar = 0; bar < countBars; bar++) {
     if(ArraySize(aBuffer.high) > bar) {
       aBuffer.high[bar] = _high;
@@ -248,8 +213,8 @@ void UpdateLabelHighLow(StructBufferInfo &aBuffer) {
       aBuffer.low[bar] = _low;
     }
   }
-  UpdateLabel(aBuffer.nameHigh, _high, aBuffer.date, aBuffer.c);
-  UpdateLabel(aBuffer.nameLow, _low, aBuffer.date, aBuffer.c);
+  UpdateLabel(aBuffer.nameLabelHigh, _high, aBuffer.date, aBuffer.c);
+  UpdateLabel(aBuffer.nameLabelLow, _low, aBuffer.date, aBuffer.c);
 } 
 
 //　ラベル関連を全て更新
@@ -262,23 +227,40 @@ void UpdateLabelObjAll(StructBufferInfo &aBuffers[]) {
   // Comment(commentStr);
 }
 
+// Line
+// ラインを更新
+void UpdateLine(string aName, double aValue) {
+  string _objName = aName;
+  if(ArraySize(Time) > 0) {
+    ObjectMove(_objName, 0, Time[0], aValue);
+  }
+}
+
+//　ラインを全て更新
+void UpdateLineObjAll(StructBufferInfo &aBuffers[]) {
+  // commentStr = "";
+  for(int i = 0; i < ArraySize(aBuffers); i++) {
+    UpdateLine(aBuffers[i].nameLineHigh, aBuffers[i].highest);
+    UpdateLine(aBuffers[i].nameLineLow, aBuffers[i].lowest);
+  }
+  // Comment(commentStr);
+}
+
 //--------------
 // 削除
-// ラベル関連を削除
-void DeleteLabel(string aName) {
-  ObjectDelete(aName);
-}
-
-// ラベル関連を削除 high&low
-void DeleteLabelHighLow(StructBufferInfo &aBuffer) {
-  DeleteLabel(aBuffer.nameHigh);
-  DeleteLabel(aBuffer.nameLow);
-}
-
 // ラベル関連を全て削除
 void DeleteLabelAll(StructBufferInfo &aBuffers[]) {
   for(int i = 0; i < ArraySize(aBuffers); i++){
-    DeleteLabelHighLow(aBuffers[i]);
+    ObjectDelete(aBuffers[i].nameLabelHigh);
+    ObjectDelete(aBuffers[i].nameLabelLow);
+  }
+}
+
+// ラインを全て削除
+void DeleteLineAll(StructBufferInfo &aBuffers[]) {
+  for(int i = 0; i < ArraySize(aBuffers); i++){
+    ObjectDelete(aBuffers[i].nameLineHigh);
+    ObjectDelete(aBuffers[i].nameLineLow);
   }
 }
 
