@@ -5,10 +5,35 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2018, Yosuke Adachi"
 #property link      ""
-#property version   "2.05"
+#property version   "3.00"
 #property strict
 #property indicator_chart_window
 #property indicator_buffers 8
+#property  indicator_color1 Red
+#property  indicator_style1 STYLE_SOLID //線種
+#property  indicator_width1 1 //線の太さ
+#property  indicator_color2 Red
+#property  indicator_style2 STYLE_SOLID //線種
+#property  indicator_width2 1 //線の太さ
+#property  indicator_color3 Green
+#property  indicator_style3 STYLE_SOLID //線種
+#property  indicator_width3 1 //線の太さ
+#property  indicator_color4 Green
+#property  indicator_style4 STYLE_SOLID //線種
+#property  indicator_width4 1 //線の太さ
+#property  indicator_color5 Blue
+#property  indicator_style5 STYLE_SOLID //線種
+#property  indicator_width5 1 //線の太さ
+#property  indicator_color6 Blue
+#property  indicator_style6 STYLE_SOLID //線種
+#property  indicator_width6 1 //線の太さ
+#property  indicator_color7 Orange
+#property  indicator_style7 STYLE_SOLID //線種
+#property  indicator_width7 1 //線の太さ
+#property  indicator_color8 Orange
+#property  indicator_style8 STYLE_SOLID //線種
+#property  indicator_width8 1 //線の太さ
+
 
 #define DAYS  4  //表示する日数
 
